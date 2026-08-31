@@ -1,0 +1,85 @@
+import { SatelliteFootageFeed } from '../types';
+
+export const SATELLITE_FOOTAGE_FEEDS: SatelliteFootageFeed[] = [
+  {
+    id: 'footage_iss_orbital',
+    title: 'ISS 4K Ultra-HD Earth Observation Pass',
+    subtitle: 'Nadir & Atmospheric Horizon Limb Feed',
+    videoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f5/%27Home%27_-_4K_Views_from_Space.webm',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&q=85',
+    satellite: 'International Space Station (NASA / ESA Cupola 4K)',
+    orbitType: 'ISS Orbital Pass',
+    altitudeKm: 420,
+    velocityKmS: 7.66,
+    swathWidthKm: 480,
+    groundTrack: 'Equatorial / Mediterranean & Continental Crossing',
+    timestamp: '2024-08-28T14:22:10Z',
+    description: 'Authentic 4K ultra-high-definition Earth observation video captured from the International Space Station, documenting atmospheric Rayleigh scattering, cloud deck dynamics, and continental terrain transitions.',
+    features: ['Atmospheric Rayleigh Scattering', 'Cirrus & Cumulonimbus Formations', 'Solar Zenith Ocean Glint', 'Continental Ingress']
+  },
+  {
+    id: 'footage_cyclone_timelapse',
+    title: 'ISS Hurricane Milton Vortex & Eye Dynamics',
+    subtitle: 'High-Definition Orbital Storm Pass',
+    videoUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/47/International_Space_Station_Cameras_Capture_New_Views_Of_Hurricane_Milton_%28JSC2024M000173%29.webm',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1600&q=85',
+    satellite: 'ISS External HD Cameras (JSC Mission Control)',
+    orbitType: 'ISS Orbital Pass',
+    altitudeKm: 416,
+    velocityKmS: 7.67,
+    swathWidthKm: 750,
+    groundTrack: 'Gulf of Mexico / Atlantic Basin',
+    timestamp: '2024-10-09T18:45:00Z',
+    description: 'Genuine orbital video of Hurricane Milton showing convective spiral bands, eye-wall cloud structures, and turbulent upper-tropospheric moisture circulation.',
+    features: ['Convective Eye-Wall Dynamics', 'Atmospheric Shear Bands', 'Tropospheric Vortex Circulation', 'Deep Ocean Glint']
+  },
+  {
+    id: 'footage_ocean_coastal',
+    title: 'ISS Coastal Landforms & Ocean Sediment Pass',
+    subtitle: 'High-Resolution Continental Ingress Scan',
+    videoUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Earth_Views_from_the_International_Space_Station.webm',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=1600&q=85',
+    satellite: 'ISS EarthCam Multi-Spectral Rig',
+    orbitType: 'LEO (Low Earth Orbit)',
+    altitudeKm: 422,
+    velocityKmS: 7.65,
+    swathWidthKm: 520,
+    groundTrack: 'Coastal Littoral Corridor & Archipelagos',
+    timestamp: '2024-06-12T10:45:00Z',
+    description: 'Real-time orbital ground track passing over coastal deltas, barrier reefs, azure shallow-water lagoons, and sediment plumes.',
+    features: ['Coastal Sediment Plumes', 'Bathymetric Coral Reefs', 'Estuary Tidal Channels', 'Intertidal Inundation']
+  },
+  {
+    id: 'footage_night_lights',
+    title: 'ISS Nocturnal Pass & City Lights Radiance',
+    subtitle: 'Day-Night Radiometric & Aurora Pass',
+    videoUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/60/Flying_Over_the_Earth_at_Night_II.webm',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=1600&q=85',
+    satellite: 'ISS Low-Light High-Sensitivity Sensors',
+    orbitType: 'LEO (Low Earth Orbit)',
+    altitudeKm: 425,
+    velocityKmS: 7.64,
+    swathWidthKm: 980,
+    groundTrack: 'Eurasian / North American Conurbations',
+    timestamp: '2024-08-14T01:30:00Z',
+    description: 'Authentic night pass over illuminated population centers, displaying city grid radiance, lightning discharges within cloud systems, and atmospheric airglow.',
+    features: ['Metropolitan Power Grids', 'Atmospheric Aurora & Airglow', 'Thunderstorm Lightning Signatures', 'Highway Corridors']
+  },
+  {
+    id: 'footage_global_circulation',
+    title: 'NASA Blue Marble Global Planetary Dynamics',
+    subtitle: 'Calibrated Earth Multispectral Composite',
+    videoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/5b/Blue_Marble_animation%2C_2002.webm',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=1600&q=85',
+    satellite: 'NASA Terra & Aqua MODIS / NOAA Polar Satellites',
+    orbitType: 'SSO (Sun-Synchronous)',
+    altitudeKm: 705,
+    velocityKmS: 7.50,
+    swathWidthKm: 2330,
+    groundTrack: 'Full-Disk Planetary Observation',
+    timestamp: '2024-09-01T12:00:00Z',
+    description: 'Planetary satellite dataset visualizing global cloud circulation, sea surface temperature gradients, desert landforms, and polar ice sheets.',
+    features: ['Global Cloud Circulation', 'Continental Biome Reflectance', 'Polar Sea-Ice Boundaries', 'Ocean Current Gyres']
+  }
+];
+
