@@ -8,6 +8,17 @@ import { executeSatQueryPipeline } from './src/services/geminiRemoteSensing';
 import { extractUploadMetadata, validateImageCompatibility } from './src/services/imageAnalysis';
 import { runBenchmarkEvaluation } from './src/services/evalEngine';
 import { RemoteSensingImage, SatQueryResponse } from './src/types';
+import { optionalAuth, requireAuth, AuthRequest } from './src/middleware/auth';
+import { 
+  saveOrbitalQueryRecord, 
+  getRecentOrbitalQueries, 
+  saveSatelliteSceneRecord, 
+  getSavedScenes, 
+  saveDspyRunRecord, 
+  getDspyRuns, 
+  saveDriveImportRecord, 
+  getDriveImports 
+} from './src/db/queries';
 
 dotenv.config();
 
@@ -191,6 +202,17 @@ const handleQuery = async (req: express.Request, res: express.Response) => {
     // Store in queryStore for trace & report retrieval
     queryStore.set(response.queryId, response);
 
+    // Asynchronously log query into Cloud SQL database
+    saveOrbitalQueryRecord({
+      prompt: query,
+      aoiName: targetImages[0]?.name || 'Orbital AOI',
+      satelliteSource: targetImages[0]?.metadata?.satellite || 'Sentinel-2',
+      cloudCoverThreshold: Number((targetImages[0]?.metadata as any)?.cloudCoverPercentage || 15.0),
+      resultsCount: response.evidence?.boundingBoxes?.length || 1,
+      summary: response.answer?.slice(0, 500),
+      dspyCompiled: (response.executionTrace as any)?.dspyProgramState?.compiledSignature || 'ForwardPromptOptimized'
+    }).catch(err => console.warn('Async Cloud SQL query log non-fatal error:', err.message));
+
     return res.json(response);
   } catch (error: any) {
     console.error('API Query Execution Error:', error);
@@ -327,6 +349,131 @@ app.get('/api/seismic/live-feed', async (req, res) => {
     return res.json(data);
   } catch (error: any) {
     return res.status(500).json({ error: error.message || 'Seismic feed fetch failed' });
+  }
+});
+
+// ----------------------------------------------------
+// CLOUD SQL POSTGRESQL & WORKSPACE APIS
+// ----------------------------------------------------
+
+// GET /api/cloudsql/queries - List recent orbital queries from Cloud SQL
+app.get('/api/cloudsql/queries', async (req, res) => {
+  try {
+    const limit = Number(req.query.limit) || 20;
+    const queries = await getRecentOrbitalQueries(limit);
+    return res.json({ queries, count: queries.length });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || 'Failed to fetch queries from Cloud SQL' });
+  }
+});
+
+// POST /api/cloudsql/queries - Save orbital query to Cloud SQL
+app.post('/api/cloudsql/queries', optionalAuth, async (req: AuthRequest, res) => {
+  try {
+    const { prompt, aoiName, satelliteSource, cloudCoverThreshold, resultsCount, summary, dspyCompiled } = req.body;
+    const saved = await saveOrbitalQueryRecord({
+      userId: req.dbUserId,
+      prompt,
+      aoiName,
+      satelliteSource,
+      cloudCoverThreshold,
+      resultsCount,
+      summary,
+      dspyCompiled
+    });
+    return res.json({ success: true, record: saved });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || 'Failed to save orbital query' });
+  }
+});
+
+// GET /api/cloudsql/scenes - List saved scenes
+app.get('/api/cloudsql/scenes', async (req, res) => {
+  try {
+    const scenes = await getSavedScenes();
+    return res.json({ scenes, count: scenes.length });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || 'Failed to fetch scenes' });
+  }
+});
+
+// POST /api/cloudsql/scenes - Save satellite scene
+app.post('/api/cloudsql/scenes', optionalAuth, async (req: AuthRequest, res) => {
+  try {
+    const { sceneId, title, satellite, acquisitionDate, cloudCover, quicklookUrl, geoJson, driveFileId, driveFileName, notes } = req.body;
+    const saved = await saveSatelliteSceneRecord({
+      userId: req.dbUserId,
+      sceneId,
+      title,
+      satellite,
+      acquisitionDate,
+      cloudCover,
+      quicklookUrl,
+      geoJson,
+      driveFileId,
+      driveFileName,
+      notes
+    });
+    return res.json({ success: true, scene: saved });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || 'Failed to save satellite scene' });
+  }
+});
+
+// GET /api/cloudsql/dspy-runs - List DSPy training runs
+app.get('/api/cloudsql/dspy-runs', async (req, res) => {
+  try {
+    const runs = await getDspyRuns();
+    return res.json({ runs, count: runs.length });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || 'Failed to fetch DSPy runs' });
+  }
+});
+
+// POST /api/cloudsql/dspy-runs - Save DSPy training run
+app.post('/api/cloudsql/dspy-runs', optionalAuth, async (req: AuthRequest, res) => {
+  try {
+    const { taskName, datasetSource, metricScore, teleprompterType, status, compiledPrompt } = req.body;
+    const saved = await saveDspyRunRecord({
+      userId: req.dbUserId,
+      taskName,
+      datasetSource,
+      metricScore,
+      teleprompterType,
+      status,
+      compiledPrompt
+    });
+    return res.json({ success: true, run: saved });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || 'Failed to save DSPy run' });
+  }
+});
+
+// GET /api/cloudsql/drive-imports - List Google Drive imported files
+app.get('/api/cloudsql/drive-imports', async (req, res) => {
+  try {
+    const imports = await getDriveImports();
+    return res.json({ imports, count: imports.length });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || 'Failed to fetch drive imports' });
+  }
+});
+
+// POST /api/cloudsql/drive-imports - Record a Google Drive / Picker import
+app.post('/api/cloudsql/drive-imports', optionalAuth, async (req: AuthRequest, res) => {
+  try {
+    const { fileId, fileName, mimeType, sizeBytes, featureCount } = req.body;
+    const saved = await saveDriveImportRecord({
+      userId: req.dbUserId,
+      fileId,
+      fileName,
+      mimeType,
+      sizeBytes,
+      featureCount
+    });
+    return res.json({ success: true, imported: saved });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || 'Failed to record drive import' });
   }
 });
 

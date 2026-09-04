@@ -12,9 +12,16 @@ import { WorldChangeTimeline } from './components/WorldChangeTimeline';
 import { IrToColorConverter } from './components/IrToColorConverter';
 import { DisasterManagementInspector } from './components/DisasterManagementInspector';
 import { SeismicTsunamiPredictor } from './components/SeismicTsunamiPredictor';
+import { LiveProviderStreamPanel } from './components/LiveProviderStreamPanel';
+import { GcsIlmTrainingStudio } from './components/GcsIlmTrainingStudio';
+import { SelfLearningDspyCloudberryStudio } from './components/SelfLearningDspyCloudberryStudio';
 import { ResearchModelsCatalogModal } from './components/ResearchModelsCatalogModal';
+import { GoogleMapsOrbitalViewer } from './components/GoogleMapsOrbitalViewer';
+import { GoogleDrivePicker } from './components/GoogleDrivePicker';
+import { CloudSqlLiveExplorer } from './components/CloudSqlLiveExplorer';
+import { SatQueryProblemStatementView } from './components/SatQueryProblemStatementView';
 import { SAMPLE_DATASETS } from './data/samples';
-import { RemoteSensingImage, SatQueryResponse, TaskType, BoundingBoxEvidence } from './types';
+import { RemoteSensingImage, SatQueryResponse, TaskType, BoundingBoxEvidence, GeoMetadata } from './types';
 import { executeSatQueryPipeline } from './services/geminiRemoteSensing';
 import { IdentifiedObjectRecord } from './utils/landCoverClassifier';
 
@@ -32,6 +39,18 @@ export default function App() {
   const [query, setQuery] = useState<string>(SAMPLE_DATASETS[0].recommendedQueries[0].query);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [response, setResponse] = useState<SatQueryResponse | null>(null);
+  const [queryHistory, setQueryHistory] = useState<SatQueryResponse[]>([]);
+
+  // Metadata non-destructive correction handler
+  const handleUpdateImageMetadata = (updatedMeta: GeoMetadata, index: number) => {
+    setCurrentImages(prev => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = { ...next[index], metadata: updatedMeta };
+      }
+      return next;
+    });
+  };
 
   // Visual state
   const [activeBandMode, setActiveBandMode] = useState<'rgb' | 'ndvi' | 'cir' | 'sar' | 'change_mask'>('rgb');
@@ -101,6 +120,7 @@ export default function App() {
       }
 
       setResponse(result);
+      setQueryHistory(prev => [result, ...prev.filter(p => p.queryId !== result.queryId).slice(0, 19)]);
     } catch (err) {
       console.error('Query execution error:', err);
     } finally {
@@ -268,6 +288,7 @@ export default function App() {
               currentImages={currentImages}
               onImagesSelected={handleDatasetSelected}
               selectedSampleId={selectedDatasetId}
+              onUpdateImageMetadata={handleUpdateImageMetadata}
             />
 
             {/* Split Screen Workspace: Left (Image Viewer) & Right (Query + Results) */}
@@ -314,6 +335,91 @@ export default function App() {
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'sih_problem_statement' && (
+          /* ISRO Problem Statement 26167 SatQuery AI View (Near-match to HuggingFace space) */
+          <SatQueryProblemStatementView
+            currentImages={currentImages}
+            setCurrentImages={setCurrentImages}
+            query={query}
+            setQuery={setQuery}
+            response={response}
+            isLoading={isLoading}
+            onRunQuery={handleRunQuery}
+            onOpenModelsCatalog={() => setIsModelsCatalogOpen(true)}
+            queryHistory={queryHistory}
+            onSelectHistoricalResponse={(historicalRes) => {
+              setResponse(historicalRes);
+              setQuery(historicalRes.query);
+            }}
+          />
+        )}
+
+        {activeTab === 'google_maps' && (
+          /* Google Maps Platform Satellite Ground Tracks & AOI Viewer */
+          <div className="h-[calc(100vh-140px)] min-h-[580px]">
+            <GoogleMapsOrbitalViewer
+              onSendToQuery={(prompt) => {
+                setQuery(prompt);
+                setActiveTab('studio');
+                handleRunQuery(prompt);
+              }}
+            />
+          </div>
+        )}
+
+        {activeTab === 'google_picker' && (
+          /* Google Drive & Google Picker Dataset Ingestion */
+          <div className="h-[calc(100vh-140px)] min-h-[580px]">
+            <GoogleDrivePicker
+              onSendToQuery={(prompt) => {
+                setQuery(prompt);
+                setActiveTab('studio');
+                handleRunQuery(prompt);
+              }}
+            />
+          </div>
+        )}
+
+        {activeTab === 'cloud_sql' && (
+          /* Cloud SQL PostgreSQL Database Explorer */
+          <div className="h-[calc(100vh-140px)] min-h-[580px]">
+            <CloudSqlLiveExplorer />
+          </div>
+        )}
+
+        {activeTab === 'live_streams' && (
+          /* Live Orbital Data & GeoJSON Ingestion Center */
+          <LiveProviderStreamPanel
+            onStreamToStudio={(image, defaultQuery) => {
+              setCurrentImages([image]);
+              if (defaultQuery) setQuery(defaultQuery);
+              setActiveTab('studio');
+              handleRunQuery(defaultQuery, [image]);
+            }}
+            onOpenModelsCatalog={() => setIsModelsCatalogOpen(true)}
+          />
+        )}
+
+        {activeTab === 'gcs_ilm' && (
+          /* GeoChat, ChangeStar & ConfigILM Merged RS-LLM & What is What Training Studio */
+          <GcsIlmTrainingStudio
+            activeImage={currentImages[0]}
+            onOpenModelsCatalog={() => setIsModelsCatalogOpen(true)}
+            onSendGroundedPromptToStudio={(newQuery) => {
+              setQuery(newQuery);
+              setActiveTab('studio');
+              handleRunQuery(newQuery);
+            }}
+          />
+        )}
+
+        {activeTab === 'dspy_cloudberry' && (
+          /* Stanford DSPy & Apache Cloudberry Automated Self-Learning Engine */
+          <SelfLearningDspyCloudberryStudio
+            onOpenModelsCatalog={() => setIsModelsCatalogOpen(true)}
+          />
         )}
 
         {activeTab === 'disaster' && (

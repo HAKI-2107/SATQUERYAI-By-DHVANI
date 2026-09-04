@@ -9,17 +9,21 @@ interface UploadPanelProps {
   currentImages: RemoteSensingImage[];
   onImagesSelected: (images: RemoteSensingImage[], defaultQuery?: string, defaultTask?: string) => void;
   selectedSampleId: string;
+  onUpdateImageMetadata?: (updatedMeta: GeoMetadata, index: number) => void;
 }
 
 export const UploadPanel: React.FC<UploadPanelProps> = ({
   currentImages,
   onImagesSelected,
-  selectedSampleId
+  selectedSampleId,
+  onUpdateImageMetadata
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [activeTab, setActiveTab] = useState<'presets' | 'upload'>('presets');
   const [isMetadataModalOpen, setIsMetadataModalOpen] = useState(false);
+  const [uploadTargetSlot, setUploadTargetSlot] = useState<'auto' | 'slot1' | 'slot2'>('auto');
+  const [savedUploadsCache, setSavedUploadsCache] = useState<RemoteSensingImage[]>([]);
 
   const validation = validateImageCompatibility(currentImages);
 
@@ -64,7 +68,11 @@ export const UploadPanel: React.FC<UploadPanelProps> = ({
           const isT2 = file.name.toLowerCase().includes('t2') || file.name.toLowerCase().includes('post');
 
           let role: RemoteSensingImage['role'] = 'single';
-          if (files.length === 2) {
+          if (uploadTargetSlot === 'slot1') {
+            role = isSar ? 'sar' : 't1_pre';
+          } else if (uploadTargetSlot === 'slot2') {
+            role = isSar ? 'sar' : 't2_post';
+          } else if (files.length === 2) {
             if (isT1) role = 't1_pre';
             else if (isT2) role = 't2_post';
             else if (isSar) role = 'sar';
@@ -75,7 +83,7 @@ export const UploadPanel: React.FC<UploadPanelProps> = ({
           const newImg: RemoteSensingImage = {
             id: `custom_${Date.now()}_${index}`,
             name: file.name,
-            modality: isSar ? 'sar' : (files.length === 2 && (isT1 || isT2) ? 'bi-temporal' : 'optical'),
+            modality: isSar ? 'sar' : (files.length === 2 && (isT1 || isT2) ? 'optical' : 'optical'),
             role,
             dataUrl,
             metadata
@@ -83,7 +91,18 @@ export const UploadPanel: React.FC<UploadPanelProps> = ({
 
           processedImages.push(newImg);
           if (processedImages.length === files.length) {
-            onImagesSelected(processedImages);
+            // Non-destructive slot injection
+            setSavedUploadsCache(prev => [newImg, ...prev.slice(0, 10)]);
+
+            if (uploadTargetSlot === 'slot1') {
+              const remaining = currentImages.slice(1);
+              onImagesSelected([newImg, ...remaining]);
+            } else if (uploadTargetSlot === 'slot2') {
+              const primary = currentImages[0] || newImg;
+              onImagesSelected([primary, newImg]);
+            } else {
+              onImagesSelected(processedImages);
+            }
           }
         };
         img.src = dataUrl;
@@ -194,7 +213,50 @@ export const UploadPanel: React.FC<UploadPanelProps> = ({
         </div>
       ) : (
         /* Upload Area */
-        <div>
+        <div className="space-y-3">
+          {/* Slot Target Selector */}
+          <div className="bg-[#0c0d0e] p-2.5 rounded border border-[#2a2c31] flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center space-x-1.5">
+              <Compass className="h-3.5 w-3.5 text-[#4ade80]" />
+              <span className="text-[10px] uppercase font-bold text-[#8e9299]">Upload Target Destination:</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <button
+                type="button"
+                onClick={() => setUploadTargetSlot('auto')}
+                className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-all ${
+                  uploadTargetSlot === 'auto'
+                    ? 'bg-[#4ade80] text-black shadow-sm'
+                    : 'bg-[#151619] text-[#8e9299] hover:text-white border border-[#2a2c31]'
+                }`}
+              >
+                Auto Detect / All
+              </button>
+              <button
+                type="button"
+                onClick={() => setUploadTargetSlot('slot1')}
+                className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-all ${
+                  uploadTargetSlot === 'slot1'
+                    ? 'bg-[#3b82f6] text-white shadow-sm'
+                    : 'bg-[#151619] text-[#8e9299] hover:text-white border border-[#2a2c31]'
+                }`}
+              >
+                Slot 1 (T1 Pre / Optical)
+              </button>
+              <button
+                type="button"
+                onClick={() => setUploadTargetSlot('slot2')}
+                className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-all ${
+                  uploadTargetSlot === 'slot2'
+                    ? 'bg-[#f59e0b] text-black shadow-sm'
+                    : 'bg-[#151619] text-[#8e9299] hover:text-white border border-[#2a2c31]'
+                }`}
+              >
+                Slot 2 (T2 Post / SAR)
+              </button>
+            </div>
+          </div>
+
           <div
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -222,12 +284,49 @@ export const UploadPanel: React.FC<UploadPanelProps> = ({
               Drop Optical / SAR / GeoTIFF Imagery
             </p>
             <p className="text-[11px] mono text-[#8e9299] mt-1">
-              Supports Sentinel-2 (B1-B12), Sentinel-1 (VV/VH), and Bi-temporal T1/T2 pairs
+              Supports Sentinel-2 (B1-B12), Sentinel-1 (VV/VH), ISRO Cartosat/EOS, and Bi-temporal T1/T2 pairs
             </p>
             <span className="mt-3 inline-block px-3 py-1 bg-[#151619] hover:bg-[#2a2c31] text-[#e1e1e1] rounded text-[11px] mono uppercase tracking-wider font-semibold border border-[#2a2c31]">
               Select Local File
             </span>
           </div>
+
+          {/* Uploaded Session Imagery Tray */}
+          {savedUploadsCache.length > 0 && (
+            <div className="bg-[#0c0d0e] p-3 rounded border border-[#2a2c31] space-y-2">
+              <div className="flex items-center justify-between text-[10px] text-[#8e9299] font-bold uppercase">
+                <span className="flex items-center space-x-1">
+                  <Database className="h-3 w-3 text-[#4ade80]" />
+                  <span>Retained Uploaded Images ({savedUploadsCache.length})</span>
+                </span>
+                <span className="text-[9px] text-[#4ade80]">Click to load into view</span>
+              </div>
+              <div className="flex items-center space-x-2 overflow-x-auto pb-1">
+                {savedUploadsCache.map((img) => (
+                  <button
+                    key={img.id}
+                    type="button"
+                    onClick={() => {
+                      if (uploadTargetSlot === 'slot1') {
+                        onImagesSelected([img, ...(currentImages.slice(1))]);
+                      } else if (uploadTargetSlot === 'slot2') {
+                        onImagesSelected([currentImages[0] || img, img]);
+                      } else {
+                        onImagesSelected([img]);
+                      }
+                    }}
+                    className="flex-shrink-0 flex items-center space-x-2 p-1.5 rounded bg-[#151619] border border-[#2a2c31] hover:border-[#4ade80] text-left transition-all max-w-[180px]"
+                  >
+                    <img src={img.dataUrl} alt={img.name} className="h-8 w-8 rounded object-cover border border-[#2a2c31]" />
+                    <div className="truncate text-[10px]">
+                      <span className="text-white block font-bold truncate">{img.name}</span>
+                      <span className="text-[#8e9299] text-[9px] uppercase">{img.metadata.satellite || 'Custom'}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -279,11 +378,22 @@ export const UploadPanel: React.FC<UploadPanelProps> = ({
         </div>
       )}
 
-      {/* GeoTIFF Metadata Inspector Modal */}
+      {/* GeoTIFF Metadata Inspector & Correction Modal */}
       <GeoTiffMetadataModal
         isOpen={isMetadataModalOpen}
         onClose={() => setIsMetadataModalOpen(false)}
         images={currentImages}
+        onSaveMetadata={(updatedMeta, index) => {
+          if (onUpdateImageMetadata) {
+            onUpdateImageMetadata(updatedMeta, index);
+          } else {
+            const copy = [...currentImages];
+            if (copy[index]) {
+              copy[index] = { ...copy[index], metadata: updatedMeta };
+              onImagesSelected(copy);
+            }
+          }
+        }}
       />
     </div>
   );

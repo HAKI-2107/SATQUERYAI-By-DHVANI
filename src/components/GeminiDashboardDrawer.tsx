@@ -20,12 +20,26 @@ import {
   CloudRain,
   Flame,
   Radio,
-  Sliders
+  Sliders,
+  Target
 } from 'lucide-react';
 import { SAMPLE_DATASETS } from '../data/samples';
 import { RemoteSensingImage } from '../types';
 
-export type WorkspaceTab = 'studio' | 'disaster' | 'seismic' | 'timeline' | 'ir_color' | 'eval';
+export type WorkspaceTab = 
+  | 'studio' 
+  | 'sih_problem_statement'
+  | 'google_maps'
+  | 'google_picker'
+  | 'cloud_sql'
+  | 'live_streams' 
+  | 'gcs_ilm'
+  | 'dspy_cloudberry' 
+  | 'disaster' 
+  | 'seismic' 
+  | 'timeline' 
+  | 'ir_color' 
+  | 'eval';
 
 interface GeminiDashboardDrawerProps {
   isOpen: boolean;
@@ -91,6 +105,69 @@ export const GeminiDashboardDrawer: React.FC<GeminiDashboardDrawerProps> = ({
       badge: 'CORE VLM',
       badgeColor: 'bg-[#4ade80]/10 text-[#4ade80] border-[#4ade80]/30',
       accentColor: 'hover:border-[#4ade80]/50'
+    },
+    {
+      id: 'sih_problem_statement',
+      title: 'SatQuery AI (ISRO PS 26167)',
+      subtitle: 'VQA, Captioning, Grounding, Change Detection & SAR Fusion',
+      icon: <Target className="h-4 w-4 text-[#38bdf8]" />,
+      badge: 'ISRO PS 26167',
+      badgeColor: 'bg-[#38bdf8]/15 text-[#38bdf8] border-[#38bdf8]/40 font-bold',
+      accentColor: 'hover:border-[#38bdf8]/60'
+    },
+    {
+      id: 'google_maps',
+      title: 'Google Maps Orbital Tracker',
+      subtitle: 'Dynamic Satellite Orbits, AOI Bounding & Sensor Swaths',
+      icon: <Globe className="h-4 w-4" />,
+      badge: 'GOOGLE MAPS',
+      badgeColor: 'bg-[#38bdf8]/10 text-[#38bdf8] border-[#38bdf8]/30',
+      accentColor: 'hover:border-[#38bdf8]/50'
+    },
+    {
+      id: 'google_picker',
+      title: 'Google Drive & Picker Datasets',
+      subtitle: 'Import GeoJSON, GeoTIFFs & Imagery from Google Workspace',
+      icon: <Database className="h-4 w-4" />,
+      badge: 'GOOGLE PICKER',
+      badgeColor: 'bg-[#4285f4]/10 text-[#4285f4] border-[#4285f4]/30',
+      accentColor: 'hover:border-[#4285f4]/50'
+    },
+    {
+      id: 'cloud_sql',
+      title: 'Cloud SQL PostgreSQL Live DB',
+      subtitle: 'Drizzle ORM Persistence, Query Logs & Table Explorer',
+      icon: <Satellite className="h-4 w-4" />,
+      badge: 'POSTGRESQL',
+      badgeColor: 'bg-[#4ade80]/10 text-[#4ade80] border-[#4ade80]/30',
+      accentColor: 'hover:border-[#4ade80]/50'
+    },
+    {
+      id: 'live_streams',
+      title: 'Live Orbital Feeds & GeoJSON',
+      subtitle: 'NASA GIBS, FIRMS, Copernicus STAC & ISRO Streams',
+      icon: <Radio className="h-4 w-4" />,
+      badge: 'LIVE ORBITAL DATA',
+      badgeColor: 'bg-[#38bdf8]/10 text-[#38bdf8] border-[#38bdf8]/30',
+      accentColor: 'hover:border-[#38bdf8]/50'
+    },
+    {
+      id: 'gcs_ilm',
+      title: 'GeoChat, ChangeStar & ConfigILM',
+      subtitle: 'Merged Backend RS-LLM & "What is What" Training Studio',
+      icon: <Cpu className="h-4 w-4 text-emerald-400" />,
+      badge: 'GCS-ILM MERGED',
+      badgeColor: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30',
+      accentColor: 'hover:border-emerald-400/50'
+    },
+    {
+      id: 'dspy_cloudberry',
+      title: 'Self-Learning DSPy & Cloudberry',
+      subtitle: 'Stanford DSPy Teleprompter & Big-Spatial OLAP Aggregation',
+      icon: <Cpu className="h-4 w-4" />,
+      badge: 'DSPy + CLOUDBERRY',
+      badgeColor: 'bg-[#3b82f6]/10 text-[#3b82f6] border-[#3b82f6]/30',
+      accentColor: 'hover:border-[#3b82f6]/50'
     },
     {
       id: 'disaster',

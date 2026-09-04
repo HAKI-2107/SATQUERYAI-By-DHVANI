@@ -139,6 +139,16 @@ export interface SatQueryResponse {
   evidence: QueryEvidence;
   executionTrace: ExecutionTrace;
   imageIds: string[];
+  metrics?: {
+    executionTimeMs: number;
+    confidenceScore?: number;
+  };
+  confidenceScore?: number;
+  boundingBoxes?: BoundingBoxEvidence[];
+  changeEvidence?: ChangeEvidence;
+  agenticTrace?: { step: string; toolName: string; latencyMs: number; summary: string }[];
+  timestamp?: string;
+  metadata?: { modality: string; sensorPlatforms: string[] };
 }
 
 export interface BenchmarkSample {
@@ -276,4 +286,127 @@ export interface IRConversionSettings {
   thermalMaxTempC?: number; // e.g. +60
   splitViewPosition: number; // 0 to 100% for split screen comparison slider
 }
+
+// Live Orbital Data & GeoJSON Provider Types
+export type OrbitalDataProvider = 'nasa_gibs' | 'nasa_firms' | 'sentinel_hub_stac' | 'isro_mosdac' | 'usgs_landsat';
+
+export interface LiveProviderLayer {
+  id: string;
+  provider: OrbitalDataProvider;
+  name: string;
+  description: string;
+  resolutionMeters: number;
+  format: 'wmts' | 'wms' | 'geojson_stac' | 'geojson_thermal';
+  cadence: '10-min' | 'hourly' | 'daily' | '5-day' | '16-day';
+  coverage: 'Global' | 'Regional';
+  bandsDescription: string;
+  defaultDateOffsetDays: number;
+}
+
+export interface LiveOrbitalStreamConfig {
+  provider: OrbitalDataProvider;
+  layerId: string;
+  date: string; // YYYY-MM-DD
+  bbox: [number, number, number, number]; // [minLon, minLat, maxLon, maxLat]
+  zoomLevel: number;
+  cloudCoverMaxPct?: number;
+}
+
+export interface GeoJsonThermalFeature {
+  type: 'Feature';
+  geometry: {
+    type: 'Point' | 'Polygon';
+    coordinates: [number, number] | [number, number][][];
+  };
+  properties: {
+    id: string;
+    latitude: number;
+    longitude: number;
+    brightnessTempK: number;
+    fireRadiativePowerMw: number;
+    confidence: 'nominal' | 'low' | 'high';
+    satellite: string;
+    instrument: string;
+    acqTime: string;
+    dayNight: 'D' | 'N';
+  };
+}
+
+export interface StacItemRecord {
+  id: string;
+  type: 'Feature';
+  geometry: {
+    type: 'Polygon';
+    coordinates: number[][][];
+  };
+  properties: {
+    datetime: string;
+    platform: string;
+    cloudCoverPct: number;
+    sunElevationDeg: number;
+    sunAzimuthDeg: number;
+    orbitDirection: 'ascending' | 'descending';
+    gsd: number;
+  };
+  assets: {
+    thumbnail: { href: string; type: string };
+    visual?: { href: string; type: string };
+    nir?: { href: string; type: string };
+  };
+}
+
+// Stanford DSPy & Apache Cloudberry Self-Learning Subsystem Types
+export interface DspyCompiledSignature {
+  signatureName: string;
+  description: string;
+  inputVariables: string[];
+  outputVariables: string[];
+  systemPromptPrefix: string;
+  demonstrationsCount: number;
+  optimizedScore: number;
+  iterationsTrained: number;
+  lastUpdated: string;
+}
+
+export interface DspyDemonstrationSample {
+  id: string;
+  sourceDataset: 'Kaggle-BigEarthNet' | 'Kaggle-EuroSAT' | 'NASA-CMR' | 'ISRO-MOSDAC' | 'User-Active-Learning';
+  nlqQuery: string;
+  targetTask: TaskType;
+  geospatialSqlOrAst: string;
+  reasoningSteps: string[];
+  spatialIoU: number;
+  rewardScore: number;
+}
+
+export interface CloudberrySpatialQueryResult {
+  querySql: string;
+  executionTimeMs: number;
+  recordsScanned: number;
+  spatialIndexUsed: string; // e.g. "R-Tree MultiDim (Cloudberry GeoIndex v2)"
+  columns: string[];
+  rows: (string | number)[][];
+  geojsonBoundary?: any;
+  aggregatedStats?: {
+    totalAreaKm2?: number;
+    hotspotCount?: number;
+    meanNdviTrend?: number;
+    densityClusterCount?: number;
+  };
+}
+
+export interface AutomatedModelEvolutionState {
+  totalIngestedSamples: number;
+  nasaCmrSamples: number;
+  isroSamples: number;
+  kaggleSamples: number;
+  currentEpoch: number;
+  trainingLoss: number;
+  validationAccuracy: number;
+  spatialIoU: number;
+  lastLossGradient: number;
+  loraAdaptersUpdated: boolean;
+  status: 'idle' | 'crawling' | 'optimizing' | 'evaluating';
+}
+
 

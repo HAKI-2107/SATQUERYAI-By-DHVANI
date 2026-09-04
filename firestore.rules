@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // User profile document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    // Orbital queries collection
+    match /orbital_queries/{queryId} {
+      allow read, write: if request.auth != null;
+    }
+    // Saved satellite scenes
+    match /saved_scenes/{sceneId} {
+      allow read, write: if request.auth != null;
+    }
+    // DSPy runs
+    match /dspy_runs/{runId} {
+      allow read, write: if request.auth != null;
+    }
+    // Workspace Drive imports
+    match /drive_imports/{importId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
-  "name": "SatQuery AI",
-  "description": "Agentic remote-sensing and global geohazard assistant with JMA-EEW and INCOIS seismic and tsunami early warning AI predictor, multi-epoch timeline brain, IR-to-color converter, and quantitative damage assessment.",
+  "name": "SATQUERYAI by DHVANI",
+  "description": "Agentic remote-sensing assistant developed by team DHVANI, featuring live orbital NASA/Copernicus/ISRO streams, Google Maps Platform satellite tracking, Google Picker Drive integration, Cloud SQL PostgreSQL persistence, and Stanford DSPy with Apache Cloudberry big-spatial intelligence.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

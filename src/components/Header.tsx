@@ -9,9 +9,11 @@ import {
   Cpu,
   Waves,
   Globe,
+  Radio,
   PanelLeft,
   Menu,
-  ChevronDown
+  ChevronDown,
+  Target
 } from 'lucide-react';
 import { WorkspaceTab } from './GeminiDashboardDrawer';
 
@@ -44,6 +46,20 @@ export const Header: React.FC<HeaderProps> = ({
     switch (tab) {
       case 'studio':
         return { label: 'Satellite AI Studio', icon: <Layers className="h-3.5 w-3.5 text-[#4ade80]" />, color: 'text-[#4ade80]' };
+      case 'sih_problem_statement':
+        return { label: 'SatQuery AI (ISRO PS 26167)', icon: <Target className="h-3.5 w-3.5 text-[#38bdf8]" />, color: 'text-[#38bdf8]' };
+      case 'google_maps':
+        return { label: 'Google Maps Tracker', icon: <Globe className="h-3.5 w-3.5 text-[#38bdf8]" />, color: 'text-[#38bdf8]' };
+      case 'google_picker':
+        return { label: 'Google Drive & Picker', icon: <Cpu className="h-3.5 w-3.5 text-[#4285f4]" />, color: 'text-[#4285f4]' };
+      case 'cloud_sql':
+        return { label: 'Cloud SQL PostgreSQL', icon: <Activity className="h-3.5 w-3.5 text-[#4ade80]" />, color: 'text-[#4ade80]' };
+      case 'live_streams':
+        return { label: 'Live Orbital Feeds', icon: <Radio className="h-3.5 w-3.5 text-[#38bdf8]" />, color: 'text-[#38bdf8]' };
+      case 'gcs_ilm':
+        return { label: 'GeoChat & ChangeStar LLM', icon: <Cpu className="h-3.5 w-3.5 text-emerald-400" />, color: 'text-emerald-400' };
+      case 'dspy_cloudberry':
+        return { label: 'DSPy & Cloudberry OLAP', icon: <Cpu className="h-3.5 w-3.5 text-[#3b82f6]" />, color: 'text-[#3b82f6]' };
       case 'disaster':
         return { label: 'Disaster Examination', icon: <ShieldAlert className="h-3.5 w-3.5 text-red-400" />, color: 'text-red-400' };
       case 'seismic':
@@ -88,6 +104,9 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="text-base sm:text-lg font-bold tracking-tighter text-white">
                   SATQUERY<span className="text-[#4ade80] lcd-glow">AI</span>
                 </div>
+                <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#2a2c31] text-[#94a3b8] font-mono border border-[#383c48]">
+                  by DHVANI
+                </span>
               </div>
             </div>
 
@@ -104,6 +123,20 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
               <ChevronDown className="h-3 w-3 text-[#8e9299] group-hover:text-white transition-transform group-hover:translate-y-0.5" />
+            </button>
+
+            {/* Quick-Switch Direct Button for ISRO PS 26167 Space */}
+            <button
+              onClick={() => setActiveTab(activeTab === 'sih_problem_statement' ? 'studio' : 'sih_problem_statement')}
+              className={`hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold mono transition-all ${
+                activeTab === 'sih_problem_statement'
+                  ? 'bg-[#38bdf8] text-black border-[#38bdf8] shadow-sm'
+                  : 'bg-[#0c0d0e] hover:bg-[#18191d] text-[#38bdf8] border-[#38bdf8]/40 hover:border-[#38bdf8]'
+              }`}
+              title="Toggle ISRO SIH Problem Statement 26167 HuggingFace-Parity Mode"
+            >
+              <Target className="h-3.5 w-3.5" />
+              <span>ISRO PS 26167 Space</span>
             </button>
           </div>
 

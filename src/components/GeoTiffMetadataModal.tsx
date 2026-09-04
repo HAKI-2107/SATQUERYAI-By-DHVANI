@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Copy, 
@@ -18,31 +18,61 @@ import {
   Tag,
   Hash,
   Terminal,
-  Info
+  Info,
+  Sliders
 } from 'lucide-react';
-import { RemoteSensingImage } from '../types';
+import { RemoteSensingImage, GeoMetadata } from '../types';
 
 interface GeoTiffMetadataModalProps {
   isOpen: boolean;
   onClose: () => void;
   images: RemoteSensingImage[];
   initialImageIndex?: number;
+  onSaveMetadata?: (updatedMetadata: GeoMetadata, index: number) => void;
 }
 
 export const GeoTiffMetadataModal: React.FC<GeoTiffMetadataModalProps> = ({
   isOpen,
   onClose,
   images,
-  initialImageIndex = 0
+  initialImageIndex = 0,
+  onSaveMetadata
 }) => {
   const [selectedIdx, setSelectedIdx] = useState<number>(initialImageIndex);
-  const [activeTab, setActiveTab] = useState<'structured' | 'bands' | 'geotags' | 'gdalinfo' | 'rawjson'>('structured');
+  const [activeTab, setActiveTab] = useState<'structured' | 'bands' | 'geotags' | 'gdalinfo' | 'rawjson' | 'edit'>('structured');
   const [copied, setCopied] = useState<boolean>(false);
-
-  if (!isOpen || !images || images.length === 0) return null;
+  const [saveSuccessNotice, setSaveSuccessNotice] = useState<string | null>(null);
 
   const currentImage = images[selectedIdx] || images[0];
-  const meta = currentImage.metadata;
+  const meta = currentImage?.metadata;
+
+  // Editable fields state
+  const [editSatellite, setEditSatellite] = useState<string>(meta?.satellite || 'Sentinel-2');
+  const [editCrs, setEditCrs] = useState<string>(meta?.crs || 'EPSG:4326 (WGS 84)');
+  const [editGsd, setEditGsd] = useState<number>(meta?.gsdMeters || 10);
+  const [editCloudCover, setEditCloudCover] = useState<number>(meta?.cloudCoverPercentage ?? 0);
+  const [editDate, setEditDate] = useState<string>(meta?.acquisitionDate || new Date().toISOString());
+  const [editBboxMinLon, setEditBboxMinLon] = useState<number>(meta?.bbox?.[0] ?? 4.412);
+  const [editBboxMinLat, setEditBboxMinLat] = useState<number>(meta?.bbox?.[1] ?? 51.901);
+  const [editBboxMaxLon, setEditBboxMaxLon] = useState<number>(meta?.bbox?.[2] ?? 4.498);
+  const [editBboxMaxLat, setEditBboxMaxLat] = useState<number>(meta?.bbox?.[3] ?? 51.968);
+
+  // Sync edits when selectedIdx changes
+  useEffect(() => {
+    if (meta) {
+      setEditSatellite(meta.satellite || 'Sentinel-2');
+      setEditCrs(meta.crs || 'EPSG:4326 (WGS 84)');
+      setEditGsd(meta.gsdMeters || 10);
+      setEditCloudCover(meta.cloudCoverPercentage ?? 0);
+      setEditDate(meta.acquisitionDate || new Date().toISOString());
+      setEditBboxMinLon(meta.bbox?.[0] ?? 4.412);
+      setEditBboxMinLat(meta.bbox?.[1] ?? 51.901);
+      setEditBboxMaxLon(meta.bbox?.[2] ?? 4.498);
+      setEditBboxMaxLat(meta.bbox?.[3] ?? 51.968);
+    }
+  }, [selectedIdx, meta]);
+
+  if (!isOpen || !images || images.length === 0) return null;
 
   // Derived calculations
   const width = meta.dimensions.width || 512;
@@ -372,10 +402,175 @@ ${parsedBands.map((b) => `Band ${b.index} Block=${width}x16 Type=${b.dataType.sp
             <FileCode className="h-3.5 w-3.5" />
             <span>Raw JSON</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('edit')}
+            className={`pb-2.5 px-3 border-b-2 text-[10px] uppercase font-bold tracking-wider transition-colors flex items-center space-x-1.5 ${
+              activeTab === 'edit'
+                ? 'border-[#4ade80] text-[#4ade80]'
+                : 'border-transparent text-[#8e9299] hover:text-[#e1e1e1]'
+            }`}
+          >
+            <Sliders className="h-3.5 w-3.5 text-[#f59e0b]" />
+            <span className="text-[#f59e0b]">Edit & Correct Metadata</span>
+          </button>
         </div>
 
         {/* Tab Content Area */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          
+          {/* TAB: EDIT & CORRECT METADATA (NON-DESTRUCTIVE FIX) */}
+          {activeTab === 'edit' && (
+            <div className="space-y-4 max-w-2xl bg-[#0c0d0e] p-4 rounded-lg border border-[#2a2c31]">
+              <div className="flex items-center justify-between border-b border-[#2a2c31] pb-2">
+                <div>
+                  <h3 className="text-xs font-bold text-white uppercase flex items-center space-x-1.5">
+                    <Sliders className="h-4 w-4 text-[#4ade80]" />
+                    <span>Correct & Retain GeoTIFF Metadata</span>
+                  </h3>
+                  <p className="text-[10px] text-[#8e9299] mt-0.5">
+                    Override or correct sensor name, CRS, GSD resolution, and geodetic bounds without destroying scene data.
+                  </p>
+                </div>
+                {saveSuccessNotice && (
+                  <span className="text-[10px] text-[#4ade80] bg-[#4ade80]/15 px-2 py-1 rounded border border-[#4ade80]/30 font-bold animate-in fade-in">
+                    {saveSuccessNotice}
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+                <div>
+                  <label className="text-[#8e9299] block text-[9px] uppercase font-bold mb-1">
+                    Satellite / Sensor Platform
+                  </label>
+                  <input
+                    type="text"
+                    value={editSatellite}
+                    onChange={(e) => setEditSatellite(e.target.value)}
+                    className="w-full bg-[#151619] border border-[#2a2c31] focus:border-[#4ade80] p-2 rounded text-white text-xs"
+                    placeholder="e.g. ISRO Cartosat-3, Sentinel-2, Landsat-8"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[#8e9299] block text-[9px] uppercase font-bold mb-1">
+                    Coordinate Reference System (CRS)
+                  </label>
+                  <input
+                    type="text"
+                    value={editCrs}
+                    onChange={(e) => setEditCrs(e.target.value)}
+                    className="w-full bg-[#151619] border border-[#2a2c31] focus:border-[#4ade80] p-2 rounded text-white text-xs"
+                    placeholder="e.g. EPSG:32643 (WGS 84 / UTM 43N)"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[#8e9299] block text-[9px] uppercase font-bold mb-1">
+                    Ground Sampling Distance (GSD Meters)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={editGsd}
+                    onChange={(e) => setEditGsd(Number(e.target.value))}
+                    className="w-full bg-[#151619] border border-[#2a2c31] focus:border-[#4ade80] p-2 rounded text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[#8e9299] block text-[9px] uppercase font-bold mb-1">
+                    Cloud Cover Percentage (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={editCloudCover}
+                    onChange={(e) => setEditCloudCover(Number(e.target.value))}
+                    className="w-full bg-[#151619] border border-[#2a2c31] focus:border-[#4ade80] p-2 rounded text-white text-xs"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="text-[#8e9299] block text-[9px] uppercase font-bold mb-1">
+                    Acquisition Timestamp (ISO 8601)
+                  </label>
+                  <input
+                    type="text"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full bg-[#151619] border border-[#2a2c31] focus:border-[#4ade80] p-2 rounded text-white text-xs"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="text-[#8e9299] block text-[9px] uppercase font-bold mb-1">
+                    Geodetic Bounding Box [MinLon, MinLat, MaxLon, MaxLat]
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={editBboxMinLon}
+                      onChange={(e) => setEditBboxMinLon(Number(e.target.value))}
+                      placeholder="Min Lon"
+                      className="bg-[#151619] border border-[#2a2c31] p-1.5 rounded text-white text-xs"
+                    />
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={editBboxMinLat}
+                      onChange={(e) => setEditBboxMinLat(Number(e.target.value))}
+                      placeholder="Min Lat"
+                      className="bg-[#151619] border border-[#2a2c31] p-1.5 rounded text-white text-xs"
+                    />
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={editBboxMaxLon}
+                      onChange={(e) => setEditBboxMaxLon(Number(e.target.value))}
+                      placeholder="Max Lon"
+                      className="bg-[#151619] border border-[#2a2c31] p-1.5 rounded text-white text-xs"
+                    />
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={editBboxMaxLat}
+                      onChange={(e) => setEditBboxMaxLat(Number(e.target.value))}
+                      placeholder="Max Lat"
+                      className="bg-[#151619] border border-[#2a2c31] p-1.5 rounded text-white text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[#2a2c31] flex items-center justify-end space-x-2">
+                <button
+                  onClick={() => {
+                    const updatedMeta: GeoMetadata = {
+                      ...meta,
+                      satellite: editSatellite as any,
+                      crs: editCrs,
+                      gsdMeters: editGsd,
+                      cloudCoverPercentage: editCloudCover,
+                      acquisitionDate: editDate,
+                      bbox: [editBboxMinLon, editBboxMinLat, editBboxMaxLon, editBboxMaxLat]
+                    };
+                    if (onSaveMetadata) {
+                      onSaveMetadata(updatedMeta, selectedIdx);
+                      setSaveSuccessNotice('Metadata successfully corrected & saved!');
+                      setTimeout(() => setSaveSuccessNotice(null), 3000);
+                    }
+                  }}
+                  className="px-4 py-2 bg-[#4ade80] hover:bg-[#4ade80]/90 text-black rounded font-bold uppercase text-xs flex items-center space-x-1.5 shadow-md"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  <span>Save & Apply Metadata Corrections</span>
+                </button>
+              </div>
+            </div>
+          )}
           
           {/* TAB 1: STRUCTURED OVERVIEW & CRS */}
           {activeTab === 'structured' && (
