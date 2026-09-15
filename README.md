@@ -19,7 +19,7 @@ SatQuery AI is an agentic vision-language assistant that answers natural-languag
 
 ## 🛠️ Architecture & Tech Stack
 
-- **Model Layer**: Google AI Studio **Gemini 3.7 Flash** (primary VLM, query-router, and response generator) + **BigEarthNet-19-CORINE-LoRA** specialist adapter. Interchangeable fallback provider interface (Anthropic/OpenAI compatible).
+- **Model Layer**:(primary VLM, query-router, and response generator) + **BigEarthNet-19-CORINE-LoRA** specialist adapter.
 - **Backend**: Python 3.11, FastAPI, Uvicorn, GDAL/RasterIO & Node.js fullstack Express server.
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, Recharts, and interactive Canvas GIS viewer.
 - **Data Loaders**: `BigEarthNetLoader`, `VRSBenchLoader`, `RSVQALoader`, `CDVQALoader`.
